@@ -16,57 +16,28 @@
    - **免人工登录**：直接在后台调用你本机默认浏览器（支持 Chrome/Edge/Safari 等）的本地 Cookie 数据库，实现接口级身份认证。
    - **最高清纯净画面**：并不依靠“浏览器截图”，而是直接向 B站 视频流服务器（CDN）请求原片那几秒的视频片段，然后用 `ffmpeg` 抽取**单帧（1/50秒级别）**。截出来的 PPT 画面极致干净、无损。
 
-## 📦 依赖安装
+## 🤖 Agentic Workflow (AI Agent 自动化使用指南)
 
-在使用本项目之前，请确保你的系统环境中安装了以下两个神器（MacOS 用户可以直接用 homebrew 安装）：
+本仓库并非设计给人类敲命令的，而是**专为 AI Agent（如 Claude Code, Cursor, Aider 等）作为“后备技能（Skill / Tools）”调用的基础设施。**
 
-```bash
-brew install yt-dlp
-brew install ffmpeg
-```
+作为 AI 助手，当你接到用户“总结 B 站某学习视频为博客”的指令时，请严格遵循以下全自动工作流：
 
-## 🛠️ 如何使用？
+### 阶段 1：知识提取 (抽取骨肉)
+AI Agent 直接调用本仓库的底层 Shell 脚本：
+1. **呼叫字幕工具**：使用终端执行 `./scripts/fetch_bili_subtitle.sh <bilibili_url> ai-zh /tmp/bili_sub`。
+2. **清洗文本**：使用 `./scripts/srt_to_txt_and_stats.py <得到的srt文件>`，拿到脱水后的纯净逐字稿。
+*(注：如果用户使用的是 Edge/Safari 等，AI Agent 可通过改写 `--cookies-from-browser` 参数来适配环境。)*
 
-本仓库包含两个核心 Shell 脚本和一个用于文本清洗的 Python 脚本。
+### 阶段 2：思维锚定与视觉抓取 (获取关键帧)
+1. **分析时间戳**：AI 助手需快速通读获取到的纯净逐字稿，从中找出讲师抛出核心概念（如架构图、知识总结、对比表）的所在时间（格式如 `04:30`）。
+2. **精准截图落盘**：AI Agent 需自主循环调用截图脚本：
+   `./scripts/screenshot_bili_frame.sh <bilibili_url> <timestamp> <output_dir> [filename]` 
+   从而神不知鬼不觉地把关键 PPT 图落盘到本地博客目录。
 
-### 1. 抓取字幕文件 (fetch_bili_subtitle.sh)
-这个脚本会自动携带你的本地浏览器 Cookie 去请求并下载指定视频的 SRT 字幕（优先下载官方/AI生成的中文 CC 字幕）。
+### 阶段 3：装配与渲染 (生成博客)
+不要停下，AI Agent 需最后运用自己的大模型理解力：
+1. 过滤掉口水话，抽取出结构化大纲。
+2. 将阶段 2 截取到的图片（及相对路径）直接插入进对应的 Markdown 小节中。
+3. 请参考本空间下的 `PROMPT_TEMPLATE.md` 中定义的“博主费曼文风”与排版协议完成最终文本润色。
 
-```bash
-# 用法: 
-# ./scripts/fetch_bili_subtitle.sh <bilibili_url> [sub_lang] [output_dir]
-
-# 示例: 提取王道 OS 第 6 集的字幕到 /tmp/bili_sub 目录
-./scripts/fetch_bili_subtitle.sh 'https://www.bilibili.com/video/BV1zV2QBtE39/?p=6' ai-zh /tmp/bili_sub
-```
-
-### 2. 精准无损提取关键帧截图 (screenshot_bili_frame.sh)
-这个脚本根据你给的时间戳，绕过防盗链机制，直接从视频原流中抽出一帧保存为图片。可以完美平替边看边手动截图。
-
-```bash
-# 用法:
-# ./scripts/screenshot_bili_frame.sh <bilibili_url> <timestamp> <output_dir> [filename]
-
-# 示例: 截取 P6 视频在 04分30秒 时的 PPT 画面
-./scripts/screenshot_bili_frame.sh 'https://www.bilibili.com/video/BV1zV2QBtE39/?p=6' 04:30 ./images/ 'p6_process_state.png'
-```
-
-### 3. 字幕转文本 (srt_to_txt_and_stats.py)
-大模型读带有时间戳的 SRT 有时候会容易分散注意力，这个脚本可以把 SRT 净化成纯文本段落。
-
-```bash
-python3 ./scripts/srt_to_txt_and_stats.py /tmp/bili_sub/BV1zV2QBtE39_p6.ai-zh.srt
-```
-
-## 💡 进阶：更换你的默认浏览器
-
-默认情况下，脚本读取的是本机的 `chrome` 浏览器的 Cookie。如果你使用的是 Edge 或 Safari，只需在运行脚本前注入或修改环境变量。
-
-可以在脚本内直接修改 `--cookies-from-browser` 参数：
-- `--cookies-from-browser edge`
-- `--cookies-from-browser safari`
-- `--cookies-from-browser firefox`
-
-## 🤖 配合 AI 变身“全自动博客写手”
-
-有了纯净的文字原料和精美的插图，剩下的就是交给 AI（如 Claude, ChatGPT）了。我们为你准备了一套**开箱即用的 Prompt 提示词模板**，请见本仓库下的 `PROMPT_TEMPLATE.md`。把你净化好的文本丢进这个模板发给大模型，一篇原汁原味的高质量排版博客就会瞬间产生。
+> **终极体验**：人类只需要给 AI 甩一个 B 站 URL，喝口水的功夫，一篇图文并茂、结构极致的高清技术博客就已经自动生成在本地编辑器里了！
