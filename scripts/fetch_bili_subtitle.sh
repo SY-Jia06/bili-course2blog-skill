@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ── Anti-412: B站会拦截不带浏览器 UA / Referer 的请求 ──
+UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+REFERER="https://www.bilibili.com"
+
 if ! command -v yt-dlp >/dev/null 2>&1; then
   echo "yt-dlp not found. Install: brew install yt-dlp" >&2
   exit 1
@@ -18,11 +22,14 @@ OUT_DIR="${3:-/tmp/bili_sub}"
 mkdir -p "$OUT_DIR"
 
 echo "[1/3] Listing subtitle tracks via Chrome cookies..."
-yt-dlp --cookies-from-browser chrome --skip-download --list-subs "$URL"
+yt-dlp --cookies-from-browser chrome --user-agent "$UA" --referer "$REFERER" \
+  --skip-download --list-subs "$URL"
 
 echo "[2/3] Downloading subtitle: ${SUB_LANG}"
 yt-dlp \
   --cookies-from-browser chrome \
+  --user-agent "$UA" \
+  --referer "$REFERER" \
   --skip-download \
   --write-subs \
   --sub-langs "$SUB_LANG" \
