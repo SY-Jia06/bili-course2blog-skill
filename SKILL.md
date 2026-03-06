@@ -47,7 +47,8 @@ Generate the final Markdown file in the user's requested directory. Follow these
    `> 📖 笔记整理自：【视频标题】PXX`
    `> 🟡 **重要度：必考 / 核心 / 快速了解**`
 2. **Body Structure**: Filter out informal filler words. Extract core concepts, step-by-step logic, and note any common pitfalls (using ⭐). 
-3. **Diagram Explanations**: Embed the screenshots you extracted using Markdown syntax (e.g., `![Alt text](custom_name.png)`). Below **each** image, add a `> 🖼️ **图解说明**：` block where you verbally explain what the image shows, breaking down its visual elements into layman's terms.
+3. **Crucial Examples (HARD RULE)**: Teachers often use metaphors, real-life examples, or specific value traces to explain complex concepts. **NEVER OMIT THESE EXAMPLES.** You must extract them and highlight them using blocks like `> 💡 关键例子：` or `> 🌰 生动比喻：`.
+4. **Diagram Explanations**: Embed the screenshots you extracted using Markdown syntax (e.g., `![Alt text](custom_name.png)`). Below **each** image, add a `> 🖼️ **图解说明**：` block where you verbally explain what the image shows, breaking down its visual elements into layman's terms.
 4. **Summary**: Conclude the blog post with a one-sentence "golden" summary.
 
 ## Tool Requirements
