@@ -12,6 +12,14 @@ TIMESTAMP="${2:?请提供截图时间戳}"
 OUTDIR="${3:?请提供输出目录}"
 FILENAME="${4:-}"
 
+# Cookie 来源：优先用文件，否则用 Chrome 浏览器
+COOKIES_FILE="${BILI_COOKIES_FILE:-}"
+if [ -n "$COOKIES_FILE" ]; then
+    COOKIE_ARGS="--cookies $COOKIES_FILE"
+else
+    COOKIE_ARGS="--cookies-from-browser chrome"
+fi
+
 # 确保输出目录存在
 mkdir -p "$OUTDIR"
 
@@ -49,7 +57,7 @@ else
 fi
 
 yt-dlp \
-    --cookies-from-browser chrome \
+    $COOKIE_ARGS \
     --download-sections "$FORMATTED_RANGE" \
     --force-overwrites \
     -o "$TMP_VIDEO" \
