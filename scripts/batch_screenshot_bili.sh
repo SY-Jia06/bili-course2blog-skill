@@ -21,6 +21,14 @@ OUTDIR="${2:?请提供输出目录}"
 shift 2
 TIMESTAMPS=("$@")
 
+# Cookie 来源：优先用文件，否则用 Chrome 浏览器
+COOKIES_FILE="${BILI_COOKIES_FILE:-}"
+if [ -n "$COOKIES_FILE" ]; then
+    COOKIE_ARGS="--cookies $COOKIES_FILE"
+else
+    COOKIE_ARGS="--cookies-from-browser edge"
+fi
+
 if [[ ${#TIMESTAMPS[@]} -eq 0 ]]; then
   echo "请至少提供一个时间戳" >&2
   exit 1
@@ -61,7 +69,7 @@ for ts in "${TIMESTAMPS[@]}"; do
   for attempt in $(seq 1 $MAX_RETRIES); do
     # 下载 5s 小切片
     if yt-dlp \
-      --cookies-from-browser chrome \
+      $COOKIE_ARGS \
       --user-agent "$UA" \
       --referer "$REFERER" \
       --add-headers "Origin:https://www.bilibili.com" \
