@@ -12,14 +12,6 @@ TIMESTAMP="${2:?请提供截图时间戳}"
 OUTDIR="${3:?请提供输出目录}"
 FILENAME="${4:-}"
 
-# Cookie 来源：优先用文件，否则用 Chrome 浏览器
-COOKIES_FILE="${BILI_COOKIES_FILE:-}"
-if [ -n "$COOKIES_FILE" ]; then
-    COOKIE_ARGS="--cookies $COOKIES_FILE"
-else
-    COOKIE_ARGS="--cookies-from-browser edge"
-fi
-
 # 确保输出目录存在
 mkdir -p "$OUTDIR"
 
@@ -36,7 +28,12 @@ fi
 OUTPATH="$OUTDIR/$FILENAME"
 TMP_VIDEO="/tmp/bili_snap_${BV}_${P_NUM}.mp4"
 
-echo "[1/2] 下载视频片段 ($TIMESTAMP)..."
+# 随机 sleep 2-5 秒防封禁
+sleep_time=$(awk 'BEGIN{srand(); print int(2+rand()*4)}')
+echo "[0/3] 正在挂起等待 ${sleep_time} 秒, 防御 B 站 412 错误..."
+sleep ${sleep_time}
+
+echo "[1/3] 下载视频片段 ($TIMESTAMP)..."
 
 # 解析起始时间和结束时间（加 1 秒）
 if [[ "$TIMESTAMP" =~ ^[0-9]+$ ]]; then
@@ -57,7 +54,9 @@ else
 fi
 
 yt-dlp \
-    $COOKIE_ARGS \
+    --cookies-from-browser edge \
+    --user-agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36" \
+    --referer "https://www.bilibili.com" \
     --download-sections "$FORMATTED_RANGE" \
     --force-overwrites \
     -o "$TMP_VIDEO" \

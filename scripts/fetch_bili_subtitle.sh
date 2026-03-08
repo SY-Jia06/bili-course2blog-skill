@@ -21,6 +21,9 @@ SUB_LANG="${2:-ai-zh}"
 OUT_DIR="${3:-/tmp/bili_sub}"
 mkdir -p "$OUT_DIR"
 
+echo "[0/3] 挂起等待防封禁..."
+sleep $(awk 'BEGIN{srand(); print int(2+rand()*4)}')
+
 echo "[1/3] Listing subtitle tracks via Chrome cookies..."
 yt-dlp --cookies-from-browser chrome --user-agent "$UA" --referer "$REFERER" \
   --skip-download --list-subs "$URL"
