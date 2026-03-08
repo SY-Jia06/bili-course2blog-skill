@@ -30,9 +30,10 @@ python3 ./scripts/srt_to_txt_and_stats.py /tmp/bili_sub/<filename>.srt
 ```
 *Read the resulting `.txt` file using the `view_file` tool to understand the content of the video.*
 
-### Phase 2: Frame Extraction (Screenshots)
-Based on your reading of the video transcript, identify key moments (timestamps) where important visual information is conceptually introduced (e.g., diagrams, architecture layouts, summary tables). 
-For each key moment, extract a screenshot using the specialized screenshot script:
+### Phase 2: Frame Extraction (Screenshots) [🔥 MANDATORY STEP]
+CRITICAL RULE: **You MUST NOT start writing the blog post (Phase 3) until you have generated 4-7 screenshots.**
+Identify key moments in the video transcript where important visual information is conceptually introduced.
+For each key moment, extract the timestamp and run the screenshot script. Afterward, ensure you insert the images into the suitable sections of the blog with detailed visual explanations.
 
 ```bash
 # Example: Extracting a frame at 04:30

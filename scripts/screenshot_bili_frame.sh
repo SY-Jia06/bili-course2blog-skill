@@ -49,7 +49,7 @@ else
 fi
 
 yt-dlp \
-    --cookies-from-browser chrome \
+    --cookies-from-browser edge \
     --download-sections "$FORMATTED_RANGE" \
     --force-overwrites \
     -o "$TMP_VIDEO" \
