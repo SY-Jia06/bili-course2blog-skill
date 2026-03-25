@@ -1,61 +1,150 @@
-# Bilibili AI Blog Toolkit 📺✨
+# Bilibili AI Blog Toolkit
 
-> **无需挂载繁重无头浏览器，直接从视频流提取纯净字幕与关键帧。专为大模型/AI Agent 打造的“b站学习转博客”终极轻量知识抓取管道！**
+> Turn a Bilibili tutorial or course video into clean subtitles, precise screenshots, and an AI-ready Markdown blog workflow.
+>
+> 中文简介：这是一个给 AI Agent 用的 B 站课程转博客工具链。它负责抽字幕、抓关键帧、产出干净文本，再交给大模型生成结构化笔记或博客。
 
-如果你是一个喜欢在 B站 学习硬核教程的朋友，并且习惯用 AI 帮你整理学习笔记，那么这个工具链正是为你准备的。
+## Disclaimer
 
-## ⚠️ 版权与免责声明 (Disclaimer)
-**本项目仅供个人学习、整理笔记以及自动化本地工作流研究使用。**
-请尊重原作者的知识产权和劳动成果。切勿将通过本工具提取的受版权保护的字幕或视频截图用于任何未经授权的商业用途或公共分发。工具本身无罪，取决于你怎么使用它。
+This project is for personal learning, note-taking, and local workflow automation research only.
+Please respect copyright, platform terms, and the original creator's work. Do not use extracted subtitles, screenshots, or generated outputs for unauthorized redistribution or commercial use.
 
-## ✨ 这是什么工作原理？
+## What It Does
 
-通常网页爬虫有两种：
-1. **传统方法**：使用 Python + Selenium / Playwright。启动一个庞大的浏览器，还得模拟人手去解决验证码登录，并且截出来的图经常带上播放进度条、弹幕和网页 UI。
-2. **本工具（降维打击）**：利用 `yt-dlp` 和 `ffmpeg` 的底层能力。
-   - **免人工登录**：直接在后台调用你本机默认浏览器（支持 Chrome/Edge/Safari 等）的本地 Cookie 数据库，实现接口级身份认证。
-   - **最高清纯净画面**：并不依靠“浏览器截图”，而是直接向 B站 视频流服务器（CDN）请求原片那几秒的视频片段，然后用 `ffmpeg` 抽取**单帧（1/50秒级别）**。截出来的 PPT 画面极致干净、无损。
+This repository is designed as skill infrastructure for AI agents such as Codex, Claude Code, Cursor, or Aider.
 
-## 🤖 Agentic Workflow (AI Agent 自动化使用指南)
+Instead of using a heavy browser automation stack, it uses:
 
-本仓库并非设计给人类敲命令的，而是**专为 AI Agent（如 Claude Code, Cursor, Aider 等）作为“后备技能（Skill / Tools）”调用的基础设施。**
+- `yt-dlp` for authenticated subtitle/audio/video extraction
+- `ffmpeg` for precise frame capture
+- lightweight cleanup scripts for subtitle-to-text conversion
 
-作为 AI 助手，当你接到用户“总结 B 站某学习视频为博客”的指令时，请严格遵循以下全自动工作流：
+The result is a fast pipeline for:
 
-### 阶段 1：知识提取 (抽取骨肉)
-AI Agent 直接调用本仓库的底层 Shell 脚本：
-1. **呼叫字幕工具**：使用终端执行 `./scripts/fetch_bili_subtitle.sh <bilibili_url> ai-zh /tmp/bili_sub`。
-2. **清洗文本**：使用 `./scripts/srt_to_txt_and_stats.py <得到的srt文件>`，拿到脱水后的纯净逐字稿。
-*(注：如果用户使用的是 Edge/Safari 等，AI Agent 可通过改写 `--cookies-from-browser` 参数来适配环境。)*
+- extracting subtitles from Bilibili videos
+- converting subtitles into clean text
+- capturing key frames without player UI
+- feeding the result into an LLM to generate notes or blog posts
 
-### 阶段 2：思维锚定与视觉抓取 (获取关键帧)
-1. **分析时间戳**：AI 助手需快速通读获取到的纯净逐字稿，从中找出讲师抛出核心概念（如架构图、知识总结、对比表）的所在时间（格式如 `04:30`）。
-2. **精准截图落盘**：AI Agent 需自主循环调用截图脚本：
-   `./scripts/screenshot_bili_frame.sh <bilibili_url> <timestamp> <output_dir> [filename]` 
-   从而神不知鬼不觉地把关键 PPT 图落盘到本地博客目录。
+## Why Not Browser Automation?
 
-### 阶段 3：装配与渲染 (生成博客)
-不要停下，AI Agent 需最后运用自己的大模型理解力：
-1. 过滤掉口水话，抽取出结构化大纲。
-2. 将阶段 2 截取到的图片（及相对路径）直接插入进对应的 Markdown 小节中。
-3. 请参考本空间下的 `PROMPT_TEMPLATE.md` 中定义的“博主费曼文风”与排版协议完成最终文本润色。
+Typical browser automation approaches rely on Selenium or Playwright, which are often slow and fragile for this task.
 
-> **终极体验**：只需要给 AI 甩一个 B 站 URL，喝口水的功夫，一篇图文并茂、结构极致的高清技术博客就已经自动生成在本地编辑器里了！
+This toolkit avoids that by:
 
----
+- reading cookies from your local browser profile
+- downloading raw subtitle/audio/video streams directly
+- extracting frames from the underlying media rather than from page screenshots
 
-## 🌍 迈向星辰大海：支持全网视频教程 (Future Scope)
+That means cleaner captures, less UI noise, and much less operational overhead.
 
-虽然本项目是以 `bilibili` 命名的，但由于它的底层心脏是强大的 **`yt-dlp`**，因此这套架构**理论上 100% 适用于全球上千个视频网站**（包括 YouTube, Coursera, Udemy, Twitter 等）。
+## Agent Workflow
 
-如果你想将这个开源仓库扩展成一个通用的 `VideoCourse2Blog-Skill`，只需对脚本进行极小的微调：
-1. **字幕语言代码适配**：B站的中文字幕是 `ai-zh`，而在 YouTube 上通常是 `zh-Hans`, `zh-TW` 或原生的 `en`。
-2. **下载格式适配**：某些外网下载到的可能是 `.vtt` 格式，只需在 Python 清洗脚本中加两行 `vtt` 兼容逻辑即可。
-3. **URL 解析逻辑**：将 B站专属的 `BV号` 和 `p=` 分集标识，替换为对应网站的视频 ID（如 YouTube 的 `?v=`）。
+### Phase 1: Subtitle Extraction
 
-有了这套基础架构，提取世界上任何角落的公开视频知识并交给 AI 转化成私有笔记，都只是举手之劳。
+Fetch subtitles with browser-cookie fallback:
 
-## 最新示例预告 (Examples)
+```bash
+./scripts/fetch_bili_subtitle.sh '<bilibili_url>' ai-zh /tmp/bili_sub chrome,safari,edge
+```
 
-你可以前往项目的 `examples/` 目录下查看最终由 AI 经过这个 Skill 工具链生成的完整博文，包括它用截帧脚本提取出来的超清课程截图：
-- [OS-10.md: 进程的概念、组成、特征](examples/OS-10.md)
+Convert the downloaded `.srt` file into plain text:
+
+```bash
+python3 ./scripts/srt_to_txt_and_stats.py /tmp/bili_sub/<filename>.srt
+```
+
+By default, the script writes:
+
+- `<filename>.txt`
+- and a backward-compatible alias `<filename>.srt.txt`
+
+### Phase 2: Screenshot Extraction
+
+Capture key frames at important timestamps:
+
+```bash
+./scripts/screenshot_bili_frame.sh '<bilibili_url>' '04:30' '<output_dir>' 'slide_01.png' chrome,safari,edge
+```
+
+Use this for diagrams, summary slides, tables, or code screenshots that are important for the final blog.
+
+### Phase 3: Blog Generation
+
+Once subtitles and screenshots are ready, let the LLM produce the final Markdown article:
+
+- remove filler speech
+- keep the core concepts and teaching logic
+- preserve important examples and metaphors
+- insert screenshots into the correct sections
+- explain each image in plain language
+
+## Included Scripts
+
+- `scripts/fetch_bili_subtitle.sh`
+  Download Bilibili subtitles with browser-cookie fallback.
+- `scripts/srt_to_txt_and_stats.py`
+  Convert `.srt` into plain text and print basic stats.
+- `scripts/screenshot_bili_frame.sh`
+  Download a short media segment and extract a clean frame.
+- `scripts/asr_bili_audio_fallback.sh`
+  Fallback ASR pipeline when subtitle tracks are unavailable.
+
+## Browser Cookie Strategy
+
+The extraction scripts support an optional final argument for browser cookies, for example:
+
+```bash
+chrome
+chrome,safari,edge
+```
+
+If omitted, the scripts try this fallback order by default:
+
+```text
+chrome,edge,safari,firefox
+```
+
+## Requirements
+
+- `yt-dlp`
+- `ffmpeg`
+- Python 3
+
+Optional:
+
+- `mlx_whisper`
+- `faster-whisper`
+
+## Output Characteristics
+
+This toolkit is optimized for:
+
+- clean subtitle extraction
+- agent-friendly plain text
+- high-quality frame capture
+- reproducible local workflows
+
+It is not intended to be a polished end-user GUI product.
+
+## Examples
+
+See the `examples/` directory for generated article samples:
+
+- [OS-10.md](examples/OS-10.md)
+- [OS-16.md](examples/OS-16.md)
+- [OS-17.md](examples/OS-17.md)
+- [OS-18.md](examples/OS-18.md)
+- [OS-19.md](examples/OS-19.md)
+- [OS-20.md](examples/OS-20.md)
+
+## Scope
+
+Although this repository is Bilibili-focused, the underlying approach is general.
+Because it relies on `yt-dlp`, the same architecture can often be adapted to other platforms with minimal changes:
+
+- subtitle language selection
+- subtitle format compatibility
+- platform-specific URL parsing
+
+In other words, this can serve as the foundation for a more general `VideoCourse2Blog` skill.
