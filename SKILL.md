@@ -17,18 +17,18 @@ Use this skill when the user wants to convert a Bilibili video (like a tutorial,
 When triggered to generate a blog from a Bilibili video URL, you must orchestrate the following automated workflow:
 
 ### Phase 1: Subtitle Extraction
-Execute the subtitle fetching script. By default, this uses the local Chrome browser's cookies to authenticate.
+Execute the subtitle fetching script. By default, this tries browser cookies in order: `chrome,edge,safari,firefox`. You may also pass an explicit browser or ordered browser list as the last argument.
 
 ```bash
 # Example: Fetching subtitles for a specific P(part) of a video
-./scripts/fetch_bili_subtitle.sh '<bilibili_url>' ai-zh /tmp/bili_sub
+./scripts/fetch_bili_subtitle.sh '<bilibili_url>' ai-zh /tmp/bili_sub chrome,safari,edge
 ```
 
 Once the `.srt` file is downloaded, clean it up to pure text using the Python script so you can read it easily without timestamps distracting you:
 ```bash
 python3 ./scripts/srt_to_txt_and_stats.py /tmp/bili_sub/<filename>.srt
 ```
-*Read the resulting `.txt` file using the `view_file` tool to understand the content of the video.*
+Read the resulting `.txt` file directly from disk to understand the content of the video. By default, the script writes `<filename>.txt` and also keeps a backward-compatible `<filename>.srt.txt` alias.
 
 ### Phase 2: Frame Extraction (Screenshots) [🔥 MANDATORY STEP]
 CRITICAL RULE: **You MUST NOT start writing the blog post (Phase 3) until you have generated 4-7 screenshots.**
@@ -37,7 +37,7 @@ For each key moment, extract the timestamp and run the screenshot script. Afterw
 
 ```bash
 # Example: Extracting a frame at 04:30
-./scripts/screenshot_bili_frame.sh '<bilibili_url>' '04:30' '<blog_output_directory>' 'custom_name.png'
+./scripts/screenshot_bili_frame.sh '<bilibili_url>' '04:30' '<blog_output_directory>' 'custom_name.png' chrome,safari,edge
 ```
 *Note: Do not string multiple screenshot commands together with `&&` if they are prone to timeout. Call them individually or in small batches.*
 
@@ -53,7 +53,7 @@ Generate the final Markdown file in the user's requested directory. Follow these
 4. **Summary**: Conclude the blog post with a one-sentence "golden" summary.
 
 ## Tool Requirements
-To execute this skill, the host machine must have `yt-dlp` and `ffmpeg` installed. The scripts are located in the `scripts/` directory relative to this `SKILL.md` file.
+To execute this skill, the host machine must have `yt-dlp` and `ffmpeg` installed. The scripts are located in the `scripts/` directory relative to this `SKILL.md` file. Subtitle, screenshot, and ASR scripts support a browser-cookie fallback strategy and accept an optional final argument such as `chrome,safari,edge`.
 
 - **`scripts/fetch_bili_subtitle.sh`**: Fetches CC subtitles.
 - **`scripts/srt_to_txt_and_stats.py`**: Cleans SRT to TXT.

@@ -2,8 +2,8 @@
 set -euo pipefail
 
 if [[ $# -lt 1 ]]; then
-  echo "Usage: $0 <bilibili_url> [output_dir] [mlx_model_repo] [fw_model]" >&2
-  echo "Example: $0 'https://www.bilibili.com/video/BV1zV2QBtE39/?p=7' /tmp/bili_asr_p7 mlx-community/whisper-large-v3-mlx small" >&2
+  echo "Usage: $0 <bilibili_url> [output_dir] [mlx_model_repo] [fw_model] [browser|browser1,browser2,...]" >&2
+  echo "Example: $0 'https://www.bilibili.com/video/BV1zV2QBtE39/?p=7' /tmp/bili_asr_p7 mlx-community/whisper-large-v3-mlx small chrome,safari,edge" >&2
   exit 1
 fi
 
@@ -11,7 +11,9 @@ URL="$1"
 OUT_DIR="${2:-/tmp/bili_asr}"
 MLX_MODEL="${3:-mlx-community/whisper-large-v3-mlx}"
 FW_MODEL="${4:-small}"
+BROWSERS_RAW="${5:-chrome,edge,safari,firefox}"
 mkdir -p "$OUT_DIR"
+IFS=',' read -r -a BROWSERS <<< "$BROWSERS_RAW"
 
 if ! command -v yt-dlp >/dev/null 2>&1; then
   echo "yt-dlp not found. Install: brew install yt-dlp" >&2
@@ -23,14 +25,28 @@ if ! command -v ffmpeg >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "[1/3] Downloading audio via Chrome cookies..."
-yt-dlp \
-  --cookies-from-browser chrome \
-  -f ba \
-  --extract-audio \
-  --audio-format mp3 \
-  -o "$OUT_DIR/audio.%(ext)s" \
-  "$URL"
+echo "[1/3] Downloading audio via browser cookies..."
+AUDIO_DOWNLOADED=0
+for browser in "${BROWSERS[@]}"; do
+  browser="${browser// /}"
+  [[ -z "$browser" ]] && continue
+  echo "  - trying cookies from: $browser"
+  if yt-dlp \
+    --cookies-from-browser "$browser" \
+    -f ba \
+    --extract-audio \
+    --audio-format mp3 \
+    -o "$OUT_DIR/audio.%(ext)s" \
+    "$URL"; then
+    AUDIO_DOWNLOADED=1
+    break
+  fi
+done
+
+if [[ "$AUDIO_DOWNLOADED" != "1" ]]; then
+  echo "Failed to download audio using browsers: $BROWSERS_RAW" >&2
+  exit 1
+fi
 
 AUDIO_FILE="$OUT_DIR/audio.mp3"
 if [[ ! -f "$AUDIO_FILE" ]]; then

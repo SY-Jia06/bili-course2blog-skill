@@ -3,7 +3,7 @@
 # 从 B 站视频中截取指定时间戳的画面（PPT 截图）
 #
 # 用法:
-#   ./screenshot_bili_frame.sh <bilibili_url> <timestamp> <output_dir> [filename]
+#   ./screenshot_bili_frame.sh <bilibili_url> <timestamp> <output_dir> [filename] [browser|browser1,browser2,...]
 
 set -euo pipefail
 
@@ -11,6 +11,7 @@ URL="${1:?用法: $0 <bilibili_url> <timestamp> <output_dir> [filename]}"
 TIMESTAMP="${2:?请提供截图时间戳}"
 OUTDIR="${3:?请提供输出目录}"
 FILENAME="${4:-}"
+BROWSERS_RAW="${5:-chrome,edge,safari,firefox}"
 
 # 确保输出目录存在
 mkdir -p "$OUTDIR"
@@ -27,6 +28,9 @@ fi
 
 OUTPATH="$OUTDIR/$FILENAME"
 TMP_VIDEO="/tmp/bili_snap_${BV}_${P_NUM}.mp4"
+UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+REFERER="https://www.bilibili.com"
+IFS=',' read -r -a BROWSERS <<< "$BROWSERS_RAW"
 
 # 随机 sleep 2-5 秒防封禁
 sleep_time=$(awk 'BEGIN{srand(); print int(2+rand()*4)}')
@@ -53,17 +57,31 @@ else
     FORMATTED_RANGE="*${SEC}-${END_TIME}"
 fi
 
-yt-dlp \
-    --cookies-from-browser edge \
-    --user-agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36" \
-    --referer "https://www.bilibili.com" \
-    --download-sections "$FORMATTED_RANGE" \
-    --force-overwrites \
-    -o "$TMP_VIDEO" \
-    "$URL" \
-    --quiet
+DOWNLOADED=0
+for browser in "${BROWSERS[@]}"; do
+    browser="${browser// /}"
+    [[ -z "$browser" ]] && continue
+    echo "  - trying cookies from: $browser"
+    if yt-dlp \
+        --cookies-from-browser "$browser" \
+        --user-agent "$UA" \
+        --referer "$REFERER" \
+        --download-sections "$FORMATTED_RANGE" \
+        --force-overwrites \
+        -o "$TMP_VIDEO" \
+        "$URL" \
+        --quiet; then
+        DOWNLOADED=1
+        break
+    fi
+done
 
-echo "[2/2] 提取画面..."
+if [[ "$DOWNLOADED" != "1" ]]; then
+    echo "无法使用以下浏览器 cookie 下载视频片段: $BROWSERS_RAW" >&2
+    exit 1
+fi
+
+echo "[2/3] 提取画面..."
 
 ffmpeg -y \
     -ss 00:00:01 \

@@ -36,7 +36,7 @@ def to_seconds(ts: str):
 def main():
     ap = argparse.ArgumentParser(description="Convert SRT to plain text and print stats")
     ap.add_argument("srt_file", help="Input .srt file")
-    ap.add_argument("--txt-out", help="Output txt file path (default: <srt>.txt)")
+    ap.add_argument("--txt-out", help="Output txt file path (default: replace .srt with .txt)")
     args = ap.parse_args()
 
     srt_path = Path(args.srt_file)
@@ -47,8 +47,12 @@ def main():
     lines = srt_to_text_lines(content)
     text = "\n".join(lines) + ("\n" if lines else "")
 
-    txt_out = Path(args.txt_out) if args.txt_out else srt_path.with_suffix(srt_path.suffix + ".txt")
+    txt_out = Path(args.txt_out) if args.txt_out else srt_path.with_suffix(".txt")
     txt_out.write_text(text, encoding="utf-8")
+
+    legacy_txt_out = srt_path.with_suffix(srt_path.suffix + ".txt")
+    if legacy_txt_out != txt_out:
+        legacy_txt_out.write_text(text, encoding="utf-8")
 
     block_count = sum(1 for line in content.splitlines() if line.strip().isdigit())
     char_count = sum(len(x) for x in lines)
@@ -56,6 +60,8 @@ def main():
 
     print(f"srt_file={srt_path}")
     print(f"txt_file={txt_out}")
+    if legacy_txt_out != txt_out:
+        print(f"txt_file_legacy={legacy_txt_out}")
     print(f"blocks={block_count}")
     print(f"text_lines={len(lines)}")
     print(f"chars={char_count}")
